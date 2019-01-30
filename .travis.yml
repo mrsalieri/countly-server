@@ -12,18 +12,18 @@ before_install:
 - wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB}.tgz -O /tmp/mongodb.tgz
 - tar -xvf /tmp/mongodb.tgz
 - mkdir /tmp/data
-- ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath /tmp/data --bind_ip 127.0.0.1 --logpath /var/log/mongodb/mongod.log &> /dev/null &
+- ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath /tmp/data --bind_ip 127.0.0.1 --logpath ${PWD}/mongod.log &> /dev/null &
 - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
 install: sudo bash ./bin/countly.install_travis.sh
 before_script:
 - nodejs --version
 - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
-- cat /var/log/mongodb/mongod.log
+- cat ${PWD}/mongod.log
 script: sudo npm test
 after_script:
 - cat log/countly-api.log
 - cat log/countly-dashboard.log
-- cat /var/log/mongodb/mongod.log
+- cat ${PWD}/mongod.log
 after_success:
 - cd $TRAVIS_BUILD_DIR
 - bash bin/scripts/deploy.sh
