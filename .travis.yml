@@ -3,7 +3,6 @@ env:
     - CI="travis"
     - MONGODB=3.6.6
 before_install:
-  - systemctl stop mongod
   - sudo apt-get remove -y mongodb-org mongodb-org-mongos mongodb-org-server mongodb-org-shell mongodb-org-tools
   - wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB}.tgz -O /tmp/mongodb.tgz
   - tar -xvf /tmp/mongodb.tgz
