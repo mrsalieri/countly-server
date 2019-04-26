@@ -55,10 +55,10 @@ const _ = require('underscore'),
         ob.validateUserForDataReadAPI(params, function() {
             // params validation, date format control should be done for start/end dates 'YYYY-MM-DD'
             const checkProps = {
-                'time_int_start': { 'required': true, 'type': 'Number' },
-                'time_int_end': { 'required': true, 'type': 'Number' },
-                'start_date': { 'required': false, 'type': 'String', 'min-length': 10, 'max-length': 10 },
-                'end_date': { 'required': false, 'type': 'String', 'min-length': 10, 'max-length': 10 },
+                'time_int_start': { 'required': false, 'type': 'Number' },
+                'time_int_end': { 'required': false, 'type': 'Number' },
+                'start_date': { 'required': false, 'type': 'String', 'min-length': 8, 'max-length': 10 },
+                'end_date': { 'required': false, 'type': 'String', 'min-length': 8, 'max-length': 10 },
             };
             const data = _.pick(params.qstring, Object.keys(checkProps));
 
