@@ -26,7 +26,7 @@ const _ = require('underscore'),
             return true;
         }
 
-        // add date to data
+        // add date to data. TIME DIFFERENCE PROBLEM WITH CLIENT
         const now = new common.moment();
         data.dt = now.utc().unix() * 1000; // may be used in new features
         data.date = now.format('YYYY-MM-DD');
@@ -92,6 +92,8 @@ const _ = require('underscore'),
             };
 
             // prepare db tasks
+
+            // table data
             tasks.push(new Promise(function(resolve, reject) {
                 common.db.collection(`mrsalieri${mode}`).aggregate([
                     {
@@ -100,6 +102,27 @@ const _ = require('underscore'),
                     {
                         $group: {
                             _id: '$date',
+                            my_metric_count: { $sum: '$my_metric_count' },
+                        }
+                    }
+                ],
+                function(err, response) {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(response);
+                });
+            }));
+
+            // metric summary data
+            tasks.push(new Promise(function(resolve, reject) {
+                common.db.collection(`mrsalieri${mode}`).aggregate([
+                    {
+                        $match: filter,
+                    },
+                    {
+                        $group: {
+                            _id: '$my_metric',
                             my_metric_count: { $sum: '$my_metric_count' },
                         }
                     }
