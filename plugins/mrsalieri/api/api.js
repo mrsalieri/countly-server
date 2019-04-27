@@ -11,9 +11,9 @@ const _ = require('underscore'),
 
         // params validation
         const checkProps = {
-            'device_id': { 'required': true, 'type': 'String', 'min-length': 1 },
-            'my_metric': { 'required': true, 'type': 'String', 'min-length': 1 },
-            'my_metric_count': { 'required': true, type: 'Number' },
+            device_id: { required: true, type: 'String', 'min-length': 1 },
+            my_metric: { required: true, type: 'String', 'min-length': 1 },
+            my_metric_count: { required: true, type: 'Number' },
         };
         const data = _.pick(params.qstring, Object.keys(checkProps));
 
@@ -26,7 +26,7 @@ const _ = require('underscore'),
             return true;
         }
 
-        // add date to data. TIME DIFFERENCE PROBLEM WITH CLIENT
+        // add date to data. TIMEZONE PROBLEM WITH CLIENT
         const now = new common.moment();
         data.dt = now.utc().unix() * 1000; // may be used in new features
         data.date = now.format('YYYY-MM-DD');
@@ -55,10 +55,11 @@ const _ = require('underscore'),
         ob.validateUserForDataReadAPI(params, function() {
             // params validation, date format control should be done for start/end dates 'YYYY-MM-DD'
             const checkProps = {
-                'time_int_start': { 'required': false, 'type': 'Number' },
-                'time_int_end': { 'required': false, 'type': 'Number' },
-                'start_date': { 'required': false, 'type': 'String', 'min-length': 8, 'max-length': 10 },
-                'end_date': { 'required': false, 'type': 'String', 'min-length': 8, 'max-length': 10 },
+                time_int_start: { required: false, type: 'Number' },
+                time_int_end: { required: false, type: 'Number' },
+                agg: { required: false, type: 'String' },
+                start_date: { required: false, type: 'String', 'min-length': 10, 'max-length': 10 },
+                end_date: { required: false, type: 'String', 'min-length': 10, 'max-length': 10 },
             };
             const data = _.pick(params.qstring, Object.keys(checkProps));
 
@@ -91,8 +92,9 @@ const _ = require('underscore'),
                 date: {$gte: startDate, $lte: endDate},
             };
 
-            // prepare db tasks
+            const aggParam = data.agg === 'month' ? { $substrCP: [ '$date', 0, 7 ] } : '$date';
 
+            // prepare db tasks
             // table data
             tasks.push(new Promise(function(resolve, reject) {
                 common.db.collection(`mrsalieri${mode}`).aggregate([
@@ -101,10 +103,16 @@ const _ = require('underscore'),
                     },
                     {
                         $group: {
-                            _id: '$date',
+                            _id: aggParam,
                             my_metric_count: { $sum: '$my_metric_count' },
-                        }
-                    }
+                        },
+                    },
+                    {
+                        $sort: {
+                            _id: 1,
+                            my_metric_count: -1,
+                        },
+                    },
                 ],
                 function(err, response) {
                     if (err) {
@@ -124,8 +132,14 @@ const _ = require('underscore'),
                         $group: {
                             _id: '$my_metric',
                             my_metric_count: { $sum: '$my_metric_count' },
-                        }
-                    }
+                        },
+                    },
+                    {
+                        $sort: {
+                            my_metric_count: -1,
+                            id: 1,
+                        },
+                    },
                 ],
                 function(err, response) {
                     if (err) {
