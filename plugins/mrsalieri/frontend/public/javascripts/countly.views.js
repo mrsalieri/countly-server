@@ -11,24 +11,21 @@
     Handlebars
  */
 window.mrsalieriView = countlyView.extend({
-    data: {},
     bucket: '',
     overrideBucket: false,
     tableData: [],
     summaryData: {},
-    timechartdata: [],
-    rangeAry: [],
+    timeChartData: [],
 
     beforeRender: function() {
-        // return $.when(countlyMrsalieriPlugin.initialize()).then(function() {});
         var self = this;
         return $.when($.get(countlyGlobal.path + '/mrsalieri/templates/mrsalieri.html', function(src) {
-
             //precompiled our template
             self.template = Handlebars.compile(src);
         }), countlyMrsalieriPlugin.initialize()).then(function() {});
     },
 
+    // format data for dashboard summary
     getSummaryData: function(data) {
         // data generation for dashboard summary
         var summary = data.map(function(val) {
@@ -50,7 +47,7 @@ window.mrsalieriView = countlyView.extend({
 
         for (var x = 0; x < summary.length; x += 1) {
             if (x === summary.length - 1) {
-                summary[x].percent = lastElPctg;
+                summary[x].percent = lastElPctg; // to maintain 100 total
             }
             else {
                 summary[x].percent = Math.round(summary[x].count * 100 / totalCount);
@@ -67,7 +64,7 @@ window.mrsalieriView = countlyView.extend({
         var periodObj = countlyCommon.getPeriodObj();
         var period = countlyCommon.getPeriod();
 
-        this.data = countlyMrsalieriPlugin.getData();
+        var data = countlyMrsalieriPlugin.getData();
 
         // disabling hour mode of time graph
         this.bucket = null;
@@ -78,26 +75,41 @@ window.mrsalieriView = countlyView.extend({
             this.overrideBucket = true;
         }
 
-        this.tableData = this.data.data[0].data;
-        this.rangeAry = this.data.rangeAry; // used in creating COMPLETE tick data for time graph
+        var mainData = data.data[0].data;
+        var rangeAry = data.rangeAry; // used in creating COMPLETE tick data for time graph
 
-        // formatting table data for time graph
-        var timeChartDataObj = this.tableData.reduce(function(acc, cur) {
-            acc[cur._id] = cur.my_metric_count;
+        // formatting data for time graph
+        var timeChartDataObj = mainData.reduce(function(acc, cur) {
+            var key = cur._id.length === 7 ? cur._id + '-01' : cur._id;
+            acc[key] = cur.my_metric_count;
             return acc;
         }, {});
 
-        // creating time graph data with no-data days
-        this.timechartdata = this.rangeAry.map(function(val, key) {
+        // creates time graph data with no-data days
+        this.timeChartData = rangeAry.map(function(val, key) {
             var formattedTime = moment(val, ['YYYY-M-D', 'YYYY-M']).format('YYYY-MM-DD');
+
             if (timeChartDataObj[formattedTime]) {
                 return [key + 1, timeChartDataObj[formattedTime]];
             }
             return [key + 1, 0];
         });
 
+        // creates table data
+        this.tableData = mainData.map(function(val) {
+            var obj = {};
+
+            // format check for monthly aggregation, selected for table sort
+            var formatAry = [6, 7].includes(val._id.length) ? ['YYYY-M', 'MMM'] : ['YYYY-M-D', 'D MMM'];
+
+            obj._id = moment(val._id, formatAry[0]).format(formatAry[1]);
+            obj.my_metric_count = val.my_metric_count;
+
+            return obj;
+        });
+
         // get summary data
-        this.summaryData.metrics = this.getSummaryData(this.data.data[1].data);
+        this.summaryData.metrics = this.getSummaryData(data.data[1].data);
         this.summaryData.dates = this.getSummaryData(this.tableData);
     },
 
@@ -106,17 +118,16 @@ window.mrsalieriView = countlyView.extend({
 
         this.templateData = {
             'page-title': $.i18n.map['mrsalieri.plugin-title'],
-            'logo-class': '',
-            "bars": [
+            bars: [
                 {
-                    "title": $.i18n.map['mrsalieri.top-metrics'],
-                    "data": this.summaryData.metrics,
-                    "help": '',
+                    title: $.i18n.map['mrsalieri.top-metrics'],
+                    data: this.summaryData.metrics,
+                    help: 'mrsalieri.help-top-metrics',
                 },
                 {
-                    "title": $.i18n.map['mrsalieri.top-dates'],
-                    "data": this.summaryData.dates,
-                    "help": '',
+                    title: $.i18n.map['mrsalieri.top-dates'],
+                    data: this.summaryData.dates,
+                    help: 'mrsalieri.help-top-dates',
                 },
             ],
         };
@@ -129,8 +140,8 @@ window.mrsalieriView = countlyView.extend({
             var columns = [
                 {
                     mData: '_id',
-                    sType: 'string',
-                    sTitle: $.i18n.map['mrsalieri.date'],
+                    sType: 'customDate',
+                    sTitle: $.i18n.map['common.date'],
                     sWidth: '50%',
                 },
                 {
@@ -143,17 +154,18 @@ window.mrsalieriView = countlyView.extend({
                     },
                 },
             ];
-
             this.dtable = $('.d-table').dataTable($.extend({}, $.fn.dataTable.defaults, {
                 aaData: this.tableData,
                 aoColumns: columns,
             }));
             $('.d-table').stickyTableHeaders();
 
+            // console.log(Object.keys(this.dtable));
+
             countlyCommon.drawTimeGraph([{
-                'data': this.timechartdata,
-                'label': $.i18n.map['mrsalieri.count'],
-                'color': '#333933'
+                data: this.timeChartData,
+                label: $.i18n.map['mrsalieri.count'],
+                color: '#333933'
             }], '#dashboard-graph', this.bucket, this.overrideBucket);
         }
     },
@@ -170,14 +182,14 @@ window.mrsalieriView = countlyView.extend({
             self.renderCommon(true);
 
             // summary dashboard refresh
-            var newPage = $("<div>" + self.template(self.templateData) + "</div>");
-            $(".dashboard-summary").replaceWith(newPage.find(".dashboard-summary"));
+            var newPage = $('<div>' + self.template(self.templateData) + '</div>');
+            $('.dashboard-summary').replaceWith(newPage.find('.dashboard-summary'));
 
             // refresh time graph
             countlyCommon.drawTimeGraph([{
-                'data': self.timechartdata,
-                'label': $.i18n.map['mrsalieri.count'],
-                'color': '#333933'
+                data: self.timeChartData,
+                label: $.i18n.map['mrsalieri.count'],
+                color: '#333933'
             }], '#dashboard-graph', self.bucket, self.overrideBucket);
 
             // refresh table data
