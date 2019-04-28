@@ -43,8 +43,11 @@ window.mrsalieriView = countlyView.extend({
         var totalCount = summary.reduce(function(acc, cur) {
             return acc + cur.count;
         }, 0);
-        var lastElPctg = 100;
+        if (totalCount === 0) {
+            return [];
+        }
 
+        var lastElPctg = 100;
         for (var x = 0; x < summary.length; x += 1) {
             if (x === summary.length - 1) {
                 summary[x].percent = lastElPctg; // to maintain 100 total
@@ -66,6 +69,9 @@ window.mrsalieriView = countlyView.extend({
 
         var data = countlyMrsalieriPlugin.getData();
 
+        this.tableData = [];
+        this.timeChartData = [];
+
         // disabling hour mode of time graph
         this.bucket = null;
         this.overrideBucket = false;
@@ -85,28 +91,35 @@ window.mrsalieriView = countlyView.extend({
             return acc;
         }, {});
 
-        // creates time graph data with no-data days
-        this.timeChartData = rangeAry.map(function(val, key) {
-            var formattedTime = moment(val, ['YYYY-M-D', 'YYYY-M']).format('YYYY-MM-DD');
-
-            if (timeChartDataObj[formattedTime]) {
-                return [key + 1, timeChartDataObj[formattedTime]];
-            }
-            return [key + 1, 0];
-        });
-
-        // creates table data
-        this.tableData = mainData.map(function(val) {
-            var obj = {};
+        // fill data sources with 0 counts if necessary
+        for (var x = 0; x < rangeAry.length; x += 1) {
+            var tableDataObj = {};
+            var timeChartAry = [];
 
             // format check for monthly aggregation, selected for table sort
-            var formatAry = [6, 7].includes(val._id.length) ? ['YYYY-M', 'MMM'] : ['YYYY-M-D', 'D MMM'];
+            var formatAry = period === 'month' ? ['YYYY-M', 'MMM'] : ['YYYY-M-D', 'D MMM, YYYY'];
+            var formattedTime = moment(rangeAry[x], ['YYYY-M-D', 'YYYY-M']).format('YYYY-MM-DD');
 
-            obj._id = moment(val._id, formatAry[0]).format(formatAry[1]);
-            obj.my_metric_count = val.my_metric_count;
+            if (timeChartDataObj[formattedTime]) { // if there is data
+                tableDataObj = {
+                    _id: moment(rangeAry[x], formatAry[0]).format(formatAry[1]),
+                    my_metric_count: timeChartDataObj[formattedTime],
+                };
 
-            return obj;
-        });
+                timeChartAry = [x + 1, timeChartDataObj[formattedTime]];
+            }
+            else {
+                tableDataObj = { // if no data
+                    _id: moment(rangeAry[x], formatAry[0]).format(formatAry[1]),
+                    my_metric_count: 0,
+                };
+
+                timeChartAry = [x + 1, 0];
+            }
+
+            this.tableData.push(tableDataObj);
+            this.timeChartData.push(timeChartAry);
+        }
 
         // get summary data
         this.summaryData.metrics = this.getSummaryData(data.data[1].data);
@@ -159,8 +172,6 @@ window.mrsalieriView = countlyView.extend({
                 aoColumns: columns,
             }));
             $('.d-table').stickyTableHeaders();
-
-            // console.log(Object.keys(this.dtable));
 
             countlyCommon.drawTimeGraph([{
                 data: this.timeChartData,
