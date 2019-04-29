@@ -19,7 +19,7 @@ window.mrsalieriView = countlyView.extend({
 
     beforeRender: function() {
         var self = this;
-        return $.when($.get(countlyGlobal.path + '/mrsalieri/templates/mrsalieri.html', function(src) {
+        return $.when($.get(countlyGlobal.path + '/mrsalieri/templates/default.html', function(src) {
             //precompiled our template
             self.template = Handlebars.compile(src);
         }), countlyMrsalieriPlugin.initialize()).then(function() {});
@@ -48,14 +48,15 @@ window.mrsalieriView = countlyView.extend({
         }
 
         var lastElPctg = 100;
-        for (var x = 0; x < summary.length; x += 1) {
-            if (x === summary.length - 1) {
+        for (var x = summary.length - 1; x >= 0; x -= 1) { // starts from the end to handle visual problems caused by rounding
+            if (x === 0) {
                 summary[x].percent = lastElPctg; // to maintain 100 total
             }
             else {
                 summary[x].percent = Math.round(summary[x].count * 100 / totalCount);
                 lastElPctg = lastElPctg - summary[x].percent;
             }
+
             summary[x].color = countlyCommon.GRAPH_COLORS[x];
             delete summary[x].count;
         }
@@ -131,6 +132,7 @@ window.mrsalieriView = countlyView.extend({
 
         this.templateData = {
             'page-title': $.i18n.map['mrsalieri.plugin-title'],
+            'no-data': $.i18n.map['common.bar.no-data'],
             bars: [
                 {
                     title: $.i18n.map['mrsalieri.top-metrics'],
@@ -176,7 +178,6 @@ window.mrsalieriView = countlyView.extend({
             countlyCommon.drawTimeGraph([{
                 data: this.timeChartData,
                 label: $.i18n.map['mrsalieri.count'],
-                color: '#333933'
             }], '#dashboard-graph', this.bucket, this.overrideBucket);
         }
     },
@@ -200,7 +201,6 @@ window.mrsalieriView = countlyView.extend({
             countlyCommon.drawTimeGraph([{
                 data: self.timeChartData,
                 label: $.i18n.map['mrsalieri.count'],
-                color: '#333933'
             }], '#dashboard-graph', self.bucket, self.overrideBucket);
 
             // refresh table data
