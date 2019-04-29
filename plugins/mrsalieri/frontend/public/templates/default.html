@@ -85,9 +85,9 @@
 	{{/if}}
 </div>
 {{#if bars}}
-<div class="dashboard-summary two">
+<div class="dashboard-summary two margined">
 		{{#each bars}}
-		<div class="item light help-zone-vs" data-help-localize="{{this.help}}">
+		<div class="item bar help-zone-vs" data-help-localize="{{this.help}}">
 				<div class="inner">
 						<div class="title">{{this.title}}</div>
 						{{#if this.data}}
@@ -98,7 +98,7 @@
 						</div>
 						<div class="number" data-item="{{this.data.0.name}}">{{this.data.0.name}}</div>
 						{{else}}
-						<div class="no-data" data-localize="common.bar.no-data"></div>
+						<div class="no-data" data-localize="common.bar.no-data">{{../../no-data}}</div>
 						{{/if}}
 				</div>
 		</div>
