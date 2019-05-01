@@ -161,7 +161,7 @@ window.mrsalieriView = countlyView.extend({
                 },
                 {
                     mData: 'my_metric_count',
-                    sType: 'numeric',
+                    sType: 'formatted-num',
                     sWidth: '50%',
                     sTitle: $.i18n.map['mrsalieri.count'],
                     mRender: function(d) {
