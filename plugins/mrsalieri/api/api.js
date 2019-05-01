@@ -32,15 +32,23 @@ const _ = require('underscore'),
         data.date = now.format('YYYY-MM-DD');
 
         /* NEEDS WRITE VALIDATION FOR APP_KEY BEFORE DB OPERATION!! */
+        common.db.collection('apps').findOne({'key': params.qstring.app_key + ""}, (error, response) => {
+            if (!response) {
+                common.returnMessage(params, 400, 'App does not exist');
+                return false;
+            }
 
-        // db operations
-        common.db.collection(`mrsalieri${mode}`).insert(data, function(err) {
-            if (err) {
-                common.returnMessage(params, 400, err);
-            }
-            else {
-                common.returnMessage(params, 200, 'Success');
-            }
+            data.app_id = response._id.toString();
+
+            // db operations
+            common.db.collection(`mrsalieri${mode}`).insert(data, function(err) {
+                if (err) {
+                    common.returnMessage(params, 400, err);
+                }
+                else {
+                    common.returnMessage(params, 200, 'Success');
+                }
+            });
         });
 
         return true;
@@ -55,6 +63,7 @@ const _ = require('underscore'),
         ob.validateUserForDataReadAPI(params, function() {
             // params validation, date format control should be done for start/end dates 'YYYY-MM-DD'
             const checkProps = {
+                app_id: { required: true, type: 'String' },
                 time_int_start: { required: false, type: 'Number' },
                 time_int_end: { required: false, type: 'Number' },
                 agg: { required: false, type: 'String' },
@@ -89,6 +98,7 @@ const _ = require('underscore'),
             }
 
             const filter = {
+                app_id: data.app_id,
                 date: {$gte: startDate, $lte: endDate},
             };
 
