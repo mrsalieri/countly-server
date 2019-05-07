@@ -7,7 +7,6 @@ const _ = require('underscore'),
     plugins.register('/i/mrsalieri', function(ob) {
         // get request parameters, assumed params were checked for security
         const params = ob.params;
-        const mode = params.qstring.mode === 'test' ? '_test' : ''; // to use test collection if necessary, may be removed
 
         // params validation
         const checkProps = {
@@ -41,7 +40,7 @@ const _ = require('underscore'),
             data.app_id = response._id.toString();
 
             // db operations
-            common.db.collection(`mrsalieri${mode}`).insert(data, function(err) {
+            common.db.collection('mrsalieri').insert(data, function(err) {
                 if (err) {
                     common.returnMessage(params, 400, err);
                 }
@@ -57,7 +56,6 @@ const _ = require('underscore'),
     // read api call
     plugins.register('/o/mrsalieri', function(ob) {
         const params = ob.params;
-        const mode = params.qstring.mode === 'test' ? '_test' : ''; // to use test collection if necessary, may be removed
 
         // read permission check
         ob.validateUserForDataReadAPI(params, function() {
@@ -107,7 +105,7 @@ const _ = require('underscore'),
             // prepare db tasks
             // table data
             tasks.push(new Promise(function(resolve, reject) {
-                common.db.collection(`mrsalieri${mode}`).aggregate([
+                common.db.collection('mrsalieri').aggregate([
                     {
                         $match: filter,
                     },
@@ -134,7 +132,7 @@ const _ = require('underscore'),
 
             // metric summary data
             tasks.push(new Promise(function(resolve, reject) {
-                common.db.collection(`mrsalieri${mode}`).aggregate([
+                common.db.collection('mrsalieri').aggregate([
                     {
                         $match: filter,
                     },
