@@ -174,4 +174,27 @@ const _ = require('underscore'),
         });
         return true;
     });
+
+    /**
+    * remove app related mrsalieri records
+    * @param {string} appId  - app id
+    */
+    function removeDataForApp(appId) {
+        common.db.collection('mrsalieri').remove({app_id: {$all: [appId]}}, function() {});
+    }
+
+    plugins.register('/i/apps/delete', function(ob) {
+        const appId = ob.appId;
+        removeDataForApp(appId);
+    });
+
+    plugins.register('/i/apps/clear_all', function(ob) {
+        const appId = ob.appId;
+        removeDataForApp(appId);
+    });
+
+    plugins.register('/i/apps/reset', function(ob) {
+        const appId = ob.appId;
+        removeDataForApp(appId);
+    });
 }());
