@@ -27,11 +27,11 @@ const _ = require('underscore'),
 
         // add date to data. TIMEZONE PROBLEM WITH CLIENT
         const now = new common.moment();
-        data.dt = now.utc().unix() * 1000; // may be used in new features
+        data.dt = now.unix() * 1000; // may be used in new features
         data.date = now.format('YYYY-MM-DD');
 
         /* NEEDS WRITE VALIDATION FOR APP_KEY BEFORE DB OPERATION!! */
-        common.db.collection('apps').findOne({'key': params.qstring.app_key + ""}, (error, response) => {
+        common.db.collection('apps').findOne({'key': params.qstring.app_key + ''}, (error, response) => {
             if (!response) {
                 common.returnMessage(params, 400, 'App does not exist');
                 return false;
